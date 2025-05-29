@@ -1,6 +1,7 @@
 # API Monitoring System
 
 ![Architecture](architecture.png)
+проверка на ру буквы
 
 Real-time API monitoring system with Kafka and WebSocket notifications.
 
