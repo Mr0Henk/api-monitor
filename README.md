@@ -1,4 +1,4 @@
-# API Monitoring System
+# RU: Система мониторинга API
 
 
 
@@ -61,7 +61,7 @@ api-monitor/
 ```
 
 
-# API Monitoring System
+# ENG: API Monitoring System
 
 
 
