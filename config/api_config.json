@@ -1,0 +1,25 @@
+[
+  {
+    "url": "https://httpbin.org/status/200",
+    "type": "GET"
+  },
+  {
+    "url": "https://httpbin.org/post",
+    "type": "POST",
+    "options": {
+      "json": {"test": "data"}
+    }
+  },
+  {
+    "url": "https://httpbin.org/status/404",
+    "type": "GET"
+  },
+  {
+    "url": "https://httpbin.org/status/500",
+    "type": "GET"
+  },
+  {
+    "url": "http://unreachable-service:8080",
+    "type": "HEAD"
+  }
+]

@@ -1,0 +1,13 @@
+[0;1;32m●[0m docker.service - Docker Application Container Engine
+     Loaded: loaded (]8;;file://Ubuntu/usr/lib/systemd/system/docker.service/usr/lib/systemd/system/docker.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Sat 2025-05-24 07:21:38 UTC; 5min ago
+TriggeredBy: [0;1;32m●[0m docker.socket
+       Docs: ]8;;https://docs.docker.comhttps://docs.docker.com]8;;
+   Main PID: 14514 (dockerd)
+      Tasks: 32
+     Memory: 586.0M (peak: 643.4M)
+        CPU: 36.427s
+     CGroup: /system.slice/docker.service
+             ├─[0;38;5;245m14514 /usr/bin/dockerd --mtu 1450 -H fd:// --containerd=/run/containerd/containerd.sock[0m
+             ├─[0;38;5;245m15083 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 9092 -container-ip 172.19.0.2 -container-port 9092[0m
+             └─[0;38;5;245m15089 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 9092 -container-ip 172.19.0.2 -container-port 9092[0m

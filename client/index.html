@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Monitor</title>
+    <style>
+        .alert {
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+            background: #ffe6e6;
+            border: 1px solid #ff6666;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        #refresh-button {
+            margin: 10px;
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #refresh-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Monitoring Alerts</h1>
+    <button id="refresh-button">Refresh Alerts</button>
+    <div id="alerts">
+        <div id="loading-message" class="loading">Connecting to alert stream...</div>
+    </div>
+
+    <script>
+        let ws;
+        const maxRetries = 5;
+        let retryCount = 0;
+        const alertContainer = document.getElementById('alerts');
+        const loadingMessage = document.getElementById('loading-message');
+        const refreshButton = document.getElementById('refresh-button');
+
+        // Функция для добавления алерта в интерфейс
+        function addAlertElement(alert) {
+            const div = document.createElement('div');
+            div.className = 'alert';
+            div.innerHTML = `
+                <strong>${new Date(alert.timestamp).toLocaleString()}</strong><br>
+                URL: ${alert.url}<br>
+                Error: ${alert.error || alert.status_code}
+                ${alert.response ? '<br>Response: ' + alert.response : ''}
+            `;
+            alertContainer.prepend(div);
+        }
+
+        // Функция для запроса последних алертов через HTTP
+        async function fetchLatestAlerts() {
+            try {
+                refreshButton.disabled = true;
+                const response = await fetch('http://localhost:8766/api/alerts?count=20');
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    // Очищаем текущие алерты
+                    alertContainer.innerHTML = '';
+
+                    // Добавляем новые алерты
+                    data.alerts.forEach(alert => {
+                        addAlertElement(alert);
+                    });
+
+                    // Показываем сообщение если алертов нет
+                    if (data.alerts.length === 0) {
+                        const noAlerts = document.createElement('div');
+                        noAlerts.className = 'loading';
+                        noAlerts.textContent = 'No alerts found';
+                        alertContainer.appendChild(noAlerts);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch alerts:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'alert';
+                errorMessage.textContent = 'Failed to load alerts. Please try again.';
+                alertContainer.appendChild(errorMessage);
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        // Обработчик кнопки Refresh
+        refreshButton.addEventListener('click', fetchLatestAlerts);
+
+        function connect() {
+            console.log("Connecting to WebSocket...");
+            ws = new WebSocket('ws://localhost:8765');
+
+            ws.onopen = () => {
+                console.log("WebSocket connected");
+                retryCount = 0;
+                if (loadingMessage) loadingMessage.style.display = 'none';
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.type === 'history') {
+                        // Обработка истории при подключении
+                        if (message.alerts && message.alerts.length > 0) {
+                            // Очищаем сообщение о загрузке
+                            if (loadingMessage) loadingMessage.style.display = 'none';
+
+                            // Добавляем алерты из истории
+                            message.alerts.forEach(alert => {
+                                addAlertElement(alert);
+                            });
+                        }
+                    }
+                    else if (message.type === 'new_alert') {
+                        // Обработка нового алерта
+                        if (loadingMessage) loadingMessage.style.display = 'none';
+                        addAlertElement(message.alert);
+                    }
+                } catch (e) {
+                    console.error("Error processing message:", e);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket disconnected");
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Reconnecting in 3 seconds... (${retryCount}/${maxRetries})`);
+                    setTimeout(connect, 3000);
+
+                    // Show reconnecting message
+                    if (loadingMessage) {
+                        loadingMessage.textContent = `Reconnecting... (${retryCount}/${maxRetries})`;
+                        loadingMessage.style.display = 'block';
+                    }
+                } else {
+                    console.error("Max reconnection attempts reached");
+                    if (loadingMessage) {
+                        loadingMessage.textContent = "Connection failed. Please refresh the page.";
+                        loadingMessage.style.display = 'block';
+                    }
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+        }
+
+        // Initial connection
+        connect();
+
+        // Initial fetch of alerts
+        fetchLatestAlerts();
+    </script>
+</body>
+</html>
